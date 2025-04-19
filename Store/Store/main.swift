@@ -59,8 +59,6 @@ class Register {
         self.receipt = Receipt()
     }
     
-    // param: SKU
-    // adds SKU to receipt
     func scan(_ item: SKU) -> Void {
         receipt.allItems.append(item)
     }
