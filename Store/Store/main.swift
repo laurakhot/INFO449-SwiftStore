@@ -8,7 +8,7 @@
 import Foundation
 
 protocol SKU {
-    var name: String {get}
+    var name: String {get set}
     func price() -> Int
 }
 
@@ -24,6 +24,11 @@ class Item: SKU {
     func price() -> Int {
         return self.priceEach
     }
+    
+    func applyDiscount(_ discount: Double) -> Void {
+        self.name += " (Discounted)"
+        self.priceEach = Int((Double(self.priceEach) * (1.0 - discount)).rounded())
+    }
 }
 
 class Receipt {
@@ -36,10 +41,10 @@ class Receipt {
     func output() -> String {
         var str = "Receipt:\n"
         for item in self.items() {
-            str.append("\(item.name): $\(Double(item.price())/100.0)\n")
+            str.append("\(item.name): $\(String(format: "%.2f", Double(item.price()) / 100.0))\n")
         }
         str.append("------------------\n")
-        str.append("TOTAL: $\(Double(self.total())/100.0)")
+        str.append("TOTAL: $\(String(format: "%.2f", Double(self.total()) / 100.0))")
         return str
     }
     
@@ -54,13 +59,24 @@ class Receipt {
 
 class Register {
     var receipt: Receipt
+    var coupons: [Coupon] = []
     
     init() {
         self.receipt = Receipt()
     }
     
+    func addCoupon(_ coupon: Coupon) -> Void {
+        self.coupons.append(coupon)
+    }
+    
     func scan(_ item: SKU) -> Void {
+        for coupon in coupons {
+            if item.name.contains(coupon.itemType) && !coupon.applied {
+                coupon.applyCoupon(item as! Item)
+            }
+        }
         receipt.allItems.append(item)
+        
     }
     
     func subtotal() -> Int {
@@ -71,6 +87,21 @@ class Register {
         let finalReceipt = self.receipt
         self.receipt = Receipt()
         return finalReceipt
+    }
+}
+
+class Coupon {
+    var itemType: String
+    var discount: Double = 0.15
+    var applied: Bool = false
+    
+    init(appliedTo: String) {
+        self.itemType = appliedTo
+    }
+    
+    func applyCoupon(_ item: Item) -> Void {
+        item.applyDiscount(self.discount)
+        self.applied = true
     }
 }
 
